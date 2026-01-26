@@ -17,7 +17,6 @@ export interface Category {
     icon: string;
 }
 
-// Tambahkan Status Order
 export type OrderStatus = 'Pending' | 'Preparing' | 'Ready' | 'Completed';
 
 export interface Order {
@@ -28,6 +27,9 @@ export interface Order {
     items: CartItem[];
     subTotal: number;
     tax: number;
+    bagCharge: number; // Biaya tas
     total: number;
-    status: OrderStatus; // <--- Baru
+    status: OrderStatus;
+    customerName: string; // Nama Pelanggan
+    tableNo?: string;     // Nomor Meja (Opsional)
 }

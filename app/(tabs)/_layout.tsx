@@ -1,35 +1,122 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { POSProvider } from '@/context/POSContext';
+import { Ionicons } from '@expo/vector-icons';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { router, usePathname } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
+import { Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+// ... (Kode CustomDrawerContent Anda yang sebelumnya tetap sama) ...
+function CustomDrawerContent(props: any) {
+	const pathname = usePathname();
+	return (
+		<View style={{ flex: 1 }}>
+			<DrawerContentScrollView
+				{...props}
+				contentContainerStyle={{ paddingTop: 0 }}>
+				{/* Logo Area */}
+				<View
+					style={{
+						padding: 24,
+						flexDirection: 'row',
+						alignItems: 'center',
+						gap: 12,
+					}}>
+					<View
+						style={{
+							width: 40,
+							height: 40,
+							backgroundColor: '#3b82f6',
+							borderRadius: 10,
+							justifyContent: 'center',
+							alignItems: 'center',
+						}}>
+						<Ionicons name='storefront' size={24} color='#fff' />
+					</View>
+					<Text
+						style={{
+							fontSize: 18,
+							fontWeight: '700',
+							color: '#1e293b',
+						}}>
+						Chill Pil POS
+					</Text>
+				</View>
+				<View
+					style={{
+						height: 1,
+						backgroundColor: '#f1f5f9',
+						marginHorizontal: 24,
+						marginBottom: 16,
+					}}
+				/>
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+				{/* Menu Items */}
+				<View style={{ paddingHorizontal: 12 }}>
+					<DrawerItem
+						label='Point of Sale'
+						icon={({ color, size }) => (
+							<Ionicons
+								name={
+									pathname === '/' ? 'grid' : 'grid-outline'
+								}
+								size={size}
+								color={color}
+							/>
+						)}
+						onPress={() => router.push('/')}
+						focused={pathname === '/'}
+						activeTintColor='#fff'
+						activeBackgroundColor='#3b82f6'
+						inactiveTintColor='#64748b'
+						style={{ borderRadius: 12 }}
+					/>
+					<DrawerItem
+						label='Kitchen / Orders'
+						icon={({ color, size }) => (
+							<Ionicons
+								name={
+									pathname === '/orders'
+										? 'receipt'
+										: 'receipt-outline'
+								}
+								size={size}
+								color={color}
+							/>
+						)}
+						onPress={() => router.push('/orders')}
+						focused={pathname === '/orders'}
+						activeTintColor='#fff'
+						activeBackgroundColor='#3b82f6'
+						inactiveTintColor='#64748b'
+						style={{ borderRadius: 12 }}
+					/>
+				</View>
+			</DrawerContentScrollView>
+		</View>
+	);
+}
 
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
+export default function RootLayout() {
+	return (
+		<POSProvider>
+			<GestureHandlerRootView style={{ flex: 1 }}>
+				<Drawer
+					drawerContent={(props) => (
+						<CustomDrawerContent {...props} />
+					)}
+					screenOptions={{
+						headerShown: false,
+						drawerType: 'permanent',
+						drawerStyle: {
+							width: 240,
+							borderRightColor: '#f1f5f9',
+						},
+					}}>
+					<Drawer.Screen name='index' />
+					<Drawer.Screen name='orders' />
+				</Drawer>
+			</GestureHandlerRootView>
+		</POSProvider>
+	);
 }

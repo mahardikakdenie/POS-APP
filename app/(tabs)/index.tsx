@@ -1,98 +1,182 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { CartSidebar } from '@/components/pos/cart-sidebar';
+import { ProductCard } from '@/components/pos/product-card';
+import { SessionModal } from '@/components/pos/session-modal';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { CATEGORIES } from '@/constants/menuData';
+import { usePOS } from '@/context/POSContext'; // <-- Import dari Context
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import {
+	FlatList,
+	ScrollView,
+	StyleSheet,
+	TextInput,
+	TouchableOpacity,
+	View,
+} from 'react-native';
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+const formatData = (data: any[], numColumns: number) => {
+	const numberOfFullRows = Math.floor(data.length / numColumns);
+	let numberOfElementsLastRow = data.length - numberOfFullRows * numColumns;
+	if (numberOfElementsLastRow !== 0) {
+		while (numberOfElementsLastRow !== numColumns) {
+			data.push({ id: `blank-${numberOfElementsLastRow}`, empty: true });
+			numberOfElementsLastRow++;
+		}
+	}
+	return data;
+};
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+export default function POSScreen() {
+	const { state, actions } = usePOS();
+	const numColumns = 3;
+
+	if (!state.isSessionActive) {
+		return (
+			<SessionModal
+				cashierName={state.cashierName}
+				setCashierName={actions.setCashierName}
+				onStart={actions.startSession}
+			/>
+		);
+	}
+
+	return (
+		<View style={styles.container}>
+			{/* Left Section */}
+			<View style={styles.leftSection}>
+				<View style={styles.header}>
+					<View>
+						<ThemedText style={styles.headerTitle}>
+							Welcome, {state.cashierName}
+						</ThemedText>
+						<ThemedText style={styles.headerDate}>
+							{new Date().toDateString()}
+						</ThemedText>
+					</View>
+					<View style={styles.searchBar}>
+						<Ionicons name='search' size={20} color='#94a3b8' />
+						<TextInput
+							style={styles.searchInput}
+							placeholder='Search menu...'
+							value={state.searchQuery}
+							onChangeText={actions.setSearchQuery}
+						/>
+					</View>
+				</View>
+
+				<View style={styles.categoriesContainer}>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={{ gap: 12 }}>
+						{CATEGORIES.map((cat) => (
+							<TouchableOpacity
+								key={cat.id}
+								style={[
+									styles.catItem,
+									state.selectedCat === cat.id &&
+										styles.catItemActive,
+								]}
+								onPress={() => actions.setSelectedCat(cat.id)}>
+								<Ionicons
+									name={cat.icon as any}
+									size={18}
+									color={
+										state.selectedCat === cat.id
+											? '#fff'
+											: '#64748b'
+									}
+								/>
+								<ThemedText
+									style={[
+										styles.catText,
+										state.selectedCat === cat.id &&
+											styles.catTextActive,
+									]}>
+									{cat.label}
+								</ThemedText>
+							</TouchableOpacity>
+						))}
+					</ScrollView>
+				</View>
+
+				<FlatList
+					key={'grid-3'}
+					data={formatData([...state.filteredProducts], numColumns)}
+					numColumns={numColumns}
+					keyExtractor={(item) => item.id}
+					contentContainerStyle={{ paddingBottom: 20 }}
+					columnWrapperStyle={{ gap: 15 }}
+					renderItem={({ item }) => {
+						if (item.empty)
+							return <View style={[styles.itemInvisible]} />;
+						return (
+							<ProductCard
+								item={item}
+								onPress={actions.addToCart}
+							/>
+						);
+					}}
+				/>
+			</View>
+
+			{/* Right Section */}
+			<CartSidebar
+				orderId={state.orderId}
+				cart={state.cart}
+				orderType={state.orderType}
+				setOrderType={actions.setOrderType}
+				updateQty={actions.updateQty}
+				summary={state.summary}
+				onPlaceOrder={actions.placeOrder}
+			/>
+		</View>
+	);
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+	container: { flex: 1, flexDirection: 'row', backgroundColor: '#f8fafc' },
+	leftSection: { flex: 1, padding: 24 },
+	header: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 24,
+	},
+	headerTitle: { fontSize: 24, fontWeight: '700', color: '#1e293b' },
+	headerDate: { fontSize: 14, color: '#64748b', marginTop: 4 },
+	searchBar: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#fff',
+		paddingHorizontal: 16,
+		height: 48,
+		borderRadius: 12,
+		width: 300,
+		borderWidth: 1,
+		borderColor: '#e2e8f0',
+	},
+	searchInput: { flex: 1, marginLeft: 12, fontSize: 15 },
+	categoriesContainer: { marginBottom: 24, height: 50 },
+	catItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 20,
+		paddingVertical: 12,
+		backgroundColor: '#fff',
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: '#e2e8f0',
+		gap: 8,
+	},
+	catItemActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
+	catText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+	catTextActive: { color: '#fff' },
+	itemInvisible: {
+		flex: 1,
+		backgroundColor: 'transparent',
+		marginHorizontal: 6,
+		marginBottom: 15,
+	},
 });

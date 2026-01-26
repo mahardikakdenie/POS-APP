@@ -90,6 +90,26 @@ function CustomDrawerContent(props: any) {
 						inactiveTintColor='#64748b'
 						style={{ borderRadius: 12 }}
 					/>
+					<DrawerItem
+						label='Daily Report'
+						icon={({ color, size }) => (
+							<Ionicons
+								name={
+									pathname === '/report'
+										? 'bar-chart'
+										: 'bar-chart-outline'
+								}
+								size={size}
+								color={color}
+							/>
+						)}
+						onPress={() => router.push('/report')}
+						focused={pathname === '/reports'}
+						activeTintColor='#fff'
+						activeBackgroundColor='#3b82f6'
+						inactiveTintColor='#64748b'
+						style={{ borderRadius: 12 }}
+					/>
 				</View>
 			</DrawerContentScrollView>
 		</View>
@@ -114,6 +134,7 @@ export default function RootLayout() {
 					}}>
 					<Drawer.Screen name='index' />
 					<Drawer.Screen name='orders' />
+					<Drawer.Screen name='report' />
 				</Drawer>
 			</GestureHandlerRootView>
 		</POSProvider>

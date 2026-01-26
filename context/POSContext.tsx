@@ -11,10 +11,13 @@ interface POSContextType {
 		selectedCat: string;
 		searchQuery: string;
 		orderType: string;
+		customerName: string; // Baru
+		tableNo: string; // Baru
+		useBag: boolean; // Baru
 		cart: CartItem[];
 		orders: Order[];
 		filteredProducts: Product[];
-		summary: { subTotal: number; tax: number; total: number };
+		summary: { subTotal: number; tax: number; bag: number; total: number };
 	};
 	actions: {
 		setCashierName: (name: string) => void;
@@ -22,6 +25,9 @@ interface POSContextType {
 		setSelectedCat: (cat: string) => void;
 		setSearchQuery: (query: string) => void;
 		setOrderType: (type: string) => void;
+		setCustomerName: (name: string) => void; // Baru
+		setTableNo: (num: string) => void; // Baru
+		setUseBag: (val: boolean) => void; // Baru
 		addToCart: (product: Product) => void;
 		updateQty: (id: string, delta: number) => void;
 		placeOrder: () => void;
@@ -32,12 +38,21 @@ interface POSContextType {
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 export const POSProvider = ({ children }: { children: React.ReactNode }) => {
+	// Session
 	const [isSessionActive, setIsSessionActive] = useState(false);
 	const [cashierName, setCashierName] = useState('');
-	const [orderId, setOrderId] = useState('');
+
+	// Filter
 	const [selectedCat, setSelectedCat] = useState('all');
 	const [searchQuery, setSearchQuery] = useState('');
+
+	// Transaction Details
+	const [orderId, setOrderId] = useState('');
 	const [orderType, setOrderType] = useState('Dine In');
+	const [customerName, setCustomerName] = useState(''); // State Nama Customer
+	const [tableNo, setTableNo] = useState(''); // State Meja
+	const [useBag, setUseBag] = useState(false); // State Tas
+
 	const [cart, setCart] = useState<CartItem[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
 
@@ -77,25 +92,56 @@ export const POSProvider = ({ children }: { children: React.ReactNode }) => {
 		});
 	};
 
+	// Kalkulasi Total (Termasuk Tas)
+	const summary = useMemo(() => {
+		const subTotal = cart.reduce(
+			(sum, item) => sum + item.price * item.qty,
+			0,
+		);
+		const tax = subTotal * 0.1;
+		const bag = useBag ? 0.5 : 0; // Harga Tas $0.50
+		const total = subTotal + tax + bag;
+		return { subTotal, tax, bag, total };
+	}, [cart, useBag]);
+
 	const placeOrder = () => {
 		if (cart.length === 0) {
 			Alert.alert('Error', 'Cart is empty');
 			return;
 		}
+		if (orderType === 'Dine In' && !tableNo) {
+			Alert.alert('Required', 'Please enter Table Number for Dine In');
+			return;
+		}
+		if (!customerName.trim()) {
+			Alert.alert('Required', 'Please enter Customer Name');
+			return;
+		}
+
 		const newOrder: Order = {
 			id: orderId,
 			date: new Date(),
 			cashier: cashierName,
 			type: orderType,
+			customerName: customerName,
+			tableNo: orderType === 'Dine In' ? tableNo : undefined,
 			items: [...cart],
 			subTotal: summary.subTotal,
 			tax: summary.tax,
+			bagCharge: summary.bag,
 			total: summary.total,
-			status: 'Pending', // Status awal
+			status: 'Pending',
 		};
+
 		setOrders((prev) => [newOrder, ...prev]);
+
+		// Reset Form
 		setCart([]);
+		setCustomerName('');
+		setTableNo('');
+		setUseBag(false);
 		setOrderId(Math.floor(100000 + Math.random() * 900000).toString());
+
 		Alert.alert('Success', 'Order sent to kitchen!');
 	};
 
@@ -117,16 +163,6 @@ export const POSProvider = ({ children }: { children: React.ReactNode }) => {
 		});
 	}, [selectedCat, searchQuery]);
 
-	const summary = useMemo(() => {
-		const subTotal = cart.reduce(
-			(sum, item) => sum + item.price * item.qty,
-			0,
-		);
-		const tax = subTotal * 0.1;
-		const total = subTotal + tax;
-		return { subTotal, tax, total };
-	}, [cart]);
-
 	const value = {
 		state: {
 			isSessionActive,
@@ -135,6 +171,9 @@ export const POSProvider = ({ children }: { children: React.ReactNode }) => {
 			selectedCat,
 			searchQuery,
 			orderType,
+			customerName,
+			tableNo,
+			useBag,
 			cart,
 			orders,
 			filteredProducts,
@@ -146,6 +185,9 @@ export const POSProvider = ({ children }: { children: React.ReactNode }) => {
 			setSelectedCat,
 			setSearchQuery,
 			setOrderType,
+			setCustomerName,
+			setTableNo,
+			setUseBag,
 			addToCart,
 			updateQty,
 			placeOrder,

@@ -12,7 +12,7 @@ interface POSContextType {
 		searchQuery: string;
 		orderType: string;
 		cart: CartItem[];
-		orders: Order[]; // Data Orders Global
+		orders: Order[];
 		filteredProducts: Product[];
 		summary: { subTotal: number; tax: number; total: number };
 	};
@@ -25,7 +25,7 @@ interface POSContextType {
 		addToCart: (product: Product) => void;
 		updateQty: (id: string, delta: number) => void;
 		placeOrder: () => void;
-		updateOrderStatus: (orderId: string, status: OrderStatus) => void; // Action Baru
+		updateOrderStatus: (orderId: string, status: OrderStatus) => void;
 	};
 }
 

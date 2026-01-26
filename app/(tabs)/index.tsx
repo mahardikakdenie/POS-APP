@@ -43,7 +43,6 @@ export default function POSScreen() {
 
 	return (
 		<View style={styles.container}>
-			{/* Left Section */}
 			<View style={styles.leftSection}>
 				<View style={styles.header}>
 					<View>
@@ -121,16 +120,8 @@ export default function POSScreen() {
 				/>
 			</View>
 
-			{/* Right Section */}
-			<CartSidebar
-				orderId={state.orderId}
-				cart={state.cart}
-				orderType={state.orderType}
-				setOrderType={actions.setOrderType}
-				updateQty={actions.updateQty}
-				summary={state.summary}
-				onPlaceOrder={actions.placeOrder}
-			/>
+			{/* Sidebar sekarang mengambil data sendiri dari Context */}
+			<CartSidebar />
 		</View>
 	);
 }

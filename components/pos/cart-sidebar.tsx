@@ -1,38 +1,39 @@
-import { CartItem } from '@/constants/types/pos';
+import { ThemedText } from '@/components/themed-text';
+import { usePOS } from '@/context/POSContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '../themed-text';
+import React from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-interface Props {
-	orderId: string;
-	cart: CartItem[];
-	orderType: string;
-	setOrderType: (type: string) => void;
-	updateQty: (id: string, delta: number) => void;
-	summary: { subTotal: number; tax: number; total: number };
-	onPlaceOrder: () => void;
-}
+export const CartSidebar = () => {
+	const { state, actions } = usePOS();
+	const { orderId, cart, orderType, customerName, tableNo, useBag, summary } =
+		state;
 
-export const CartSidebar = ({
-	orderId,
-	cart,
-	orderType,
-	setOrderType,
-	updateQty,
-	summary,
-	onPlaceOrder,
-}: Props) => {
 	return (
 		<View style={styles.container}>
-			{/* Header & Order Type */}
+			{/* Header: Order ID & Type */}
 			<View>
 				<View style={styles.header}>
 					<ThemedText style={styles.title}>
 						Order #{orderId}
 					</ThemedText>
-					<Ionicons name='create-outline' size={20} color='#3b82f6' />
+					<View style={styles.editIcon}>
+						<Ionicons
+							name='create-outline'
+							size={16}
+							color='#3b82f6'
+						/>
+					</View>
 				</View>
+
 				<View style={styles.typeContainer}>
 					{['Dine In', 'To Go', 'Delivery'].map((type) => (
 						<TouchableOpacity
@@ -41,7 +42,7 @@ export const CartSidebar = ({
 								styles.typeBtn,
 								orderType === type && styles.typeBtnActive,
 							]}
-							onPress={() => setOrderType(type)}>
+							onPress={() => actions.setOrderType(type)}>
 							<ThemedText
 								style={[
 									styles.typeText,
@@ -52,9 +53,84 @@ export const CartSidebar = ({
 						</TouchableOpacity>
 					))}
 				</View>
+
+				{/* --- INPUT FORM SECTION --- */}
+				<View style={styles.formContainer}>
+					{/* Customer Name (Always Visible) */}
+					<View style={styles.inputGroup}>
+						<Ionicons
+							name='person-outline'
+							size={20}
+							color='#94a3b8'
+							style={styles.inputIcon}
+						/>
+						<TextInput
+							style={styles.textInput}
+							placeholder='Customer Name'
+							value={customerName}
+							onChangeText={actions.setCustomerName}
+						/>
+					</View>
+
+					{/* Table Number (Only for Dine In) */}
+					{orderType === 'Dine In' && (
+						<View style={[styles.inputGroup, { marginTop: 10 }]}>
+							<Ionicons
+								name='grid-outline'
+								size={20}
+								color='#94a3b8'
+								style={styles.inputIcon}
+							/>
+							<TextInput
+								style={styles.textInput}
+								placeholder='Table Number'
+								keyboardType='numeric'
+								value={tableNo}
+								onChangeText={actions.setTableNo}
+							/>
+						</View>
+					)}
+
+					{/* Shopping Bag (Only for To Go / Delivery) */}
+					{orderType !== 'Dine In' && (
+						<View style={styles.bagRow}>
+							<View
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: 8,
+								}}>
+								<View style={styles.bagIconBox}>
+									<Ionicons
+										name='bag-handle-outline'
+										size={18}
+										color='#F97316'
+									/>
+								</View>
+								<View>
+									<ThemedText style={styles.bagLabel}>
+										Eco Bag
+									</ThemedText>
+									<ThemedText style={styles.bagPrice}>
+										+$0.50
+									</ThemedText>
+								</View>
+							</View>
+							<Switch
+								value={useBag}
+								onValueChange={actions.setUseBag}
+								trackColor={{
+									false: '#e2e8f0',
+									true: '#F97316',
+								}}
+								thumbColor={'#fff'}
+							/>
+						</View>
+					)}
+				</View>
 			</View>
 
-			{/* Cart Items List */}
+			{/* Cart List */}
 			<ScrollView style={{ flex: 1 }}>
 				{cart.length === 0 ? (
 					<View style={styles.empty}>
@@ -84,7 +160,9 @@ export const CartSidebar = ({
 							</View>
 							<View style={styles.qtyContainer}>
 								<TouchableOpacity
-									onPress={() => updateQty(item.id, -1)}
+									onPress={() =>
+										actions.updateQty(item.id, -1)
+									}
 									style={styles.qtyBtn}>
 									<Ionicons
 										name='remove'
@@ -96,7 +174,9 @@ export const CartSidebar = ({
 									{item.qty}
 								</ThemedText>
 								<TouchableOpacity
-									onPress={() => updateQty(item.id, 1)}
+									onPress={() =>
+										actions.updateQty(item.id, 1)
+									}
 									style={styles.qtyBtn}>
 									<Ionicons
 										name='add'
@@ -110,43 +190,42 @@ export const CartSidebar = ({
 				)}
 			</ScrollView>
 
-			{/* Footer Summary */}
+			{/* Footer */}
 			<View style={styles.footer}>
 				<Row
 					label='Subtotal'
 					value={`$${summary.subTotal.toFixed(2)}`}
 				/>
 				<Row label='Tax (10%)' value={`$${summary.tax.toFixed(2)}`} />
-				<Row
-					label='Total'
-					value={`$${summary.total.toFixed(2)}`}
-					isTotal
-				/>
-				<TouchableOpacity style={styles.payBtn} onPress={onPlaceOrder}>
+				{summary.bag > 0 && (
+					<Row
+						label='Packaging'
+						value={`$${summary.bag.toFixed(2)}`}
+					/>
+				)}
+				<View style={styles.divider} />
+				<View style={styles.totalRow}>
+					<ThemedText style={styles.totalLabel}>Total</ThemedText>
+					<ThemedText style={styles.totalValue}>
+						${summary.total.toFixed(2)}
+					</ThemedText>
+				</View>
+
+				<TouchableOpacity
+					style={styles.payBtn}
+					onPress={actions.placeOrder}>
 					<ThemedText style={styles.payText}>Place Order</ThemedText>
+					<Ionicons name='arrow-forward' size={20} color='#fff' />
 				</TouchableOpacity>
 			</View>
 		</View>
 	);
 };
 
-// Helper Component kecil untuk baris summary
-const Row = ({
-	label,
-	value,
-	isTotal,
-}: {
-	label: string;
-	value: string;
-	isTotal?: boolean;
-}) => (
-	<View style={[styles.row, isTotal && styles.totalRow]}>
-		<ThemedText style={[styles.label, isTotal && styles.totalLabel]}>
-			{label}
-		</ThemedText>
-		<ThemedText style={[styles.value, isTotal && styles.totalLabel]}>
-			{value}
-		</ThemedText>
+const Row = ({ label, value }: { label: string; value: string }) => (
+	<View style={styles.row}>
+		<ThemedText style={styles.label}>{label}</ThemedText>
+		<ThemedText style={styles.value}>{value}</ThemedText>
 	</View>
 );
 
@@ -159,18 +238,22 @@ const styles = StyleSheet.create({
 		padding: 24,
 		justifyContent: 'space-between',
 	},
+
 	header: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
+		alignItems: 'center',
 		marginBottom: 20,
 	},
-	title: { fontSize: 20, fontWeight: '700', color: '#1e293b' },
+	title: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
+	editIcon: { padding: 4, backgroundColor: '#eff6ff', borderRadius: 8 },
+
 	typeContainer: {
 		flexDirection: 'row',
 		backgroundColor: '#f1f5f9',
 		padding: 4,
 		borderRadius: 12,
-		marginBottom: 24,
+		marginBottom: 16,
 	},
 	typeBtn: {
 		flex: 1,
@@ -178,9 +261,56 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		borderRadius: 10,
 	},
-	typeBtnActive: { backgroundColor: '#fff', elevation: 1 },
+	typeBtnActive: {
+		backgroundColor: '#fff',
+		elevation: 1,
+		shadowColor: '#000',
+		shadowOpacity: 0.05,
+		shadowRadius: 2,
+	},
 	typeText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
 	typeTextActive: { color: '#1e293b' },
+
+	// Form Styles
+	formContainer: {
+		marginBottom: 20,
+		padding: 16,
+		backgroundColor: '#F8FAFC',
+		borderRadius: 16,
+		borderWidth: 1,
+		borderColor: '#F1F5F9',
+	},
+	inputGroup: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#fff',
+		borderRadius: 10,
+		borderWidth: 1,
+		borderColor: '#e2e8f0',
+		paddingHorizontal: 12,
+	},
+	inputIcon: { marginRight: 8 },
+	textInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: '#1e293b' },
+
+	bagRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginTop: 10,
+		paddingVertical: 4,
+	},
+	bagIconBox: {
+		width: 32,
+		height: 32,
+		backgroundColor: '#FFF7ED',
+		borderRadius: 8,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	bagLabel: { fontSize: 14, fontWeight: '600', color: '#334155' },
+	bagPrice: { fontSize: 12, color: '#F97316', fontWeight: '600' },
+
+	// List Styles
 	empty: {
 		flex: 1,
 		justifyContent: 'center',
@@ -188,16 +318,15 @@ const styles = StyleSheet.create({
 		opacity: 0.5,
 	},
 	emptyText: { marginTop: 12, color: '#94a3b8' },
-	itemRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 16,
-		paddingBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: '#f8fafc',
+	itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+	itemImg: {
+		width: 48,
+		height: 48,
+		borderRadius: 10,
+		marginRight: 12,
+		backgroundColor: '#f1f5f9',
 	},
-	itemImg: { width: 50, height: 50, borderRadius: 10, marginRight: 12 },
-	itemName: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+	itemName: { fontSize: 14, fontWeight: '600', color: '#1e293b', width: 120 },
 	itemPrice: { fontSize: 13, color: '#64748b', marginTop: 2 },
 	qtyContainer: {
 		flexDirection: 'row',
@@ -205,6 +334,7 @@ const styles = StyleSheet.create({
 		backgroundColor: '#f8fafc',
 		borderRadius: 8,
 		padding: 4,
+		marginLeft: 'auto',
 	},
 	qtyBtn: {
 		width: 28,
@@ -217,32 +347,42 @@ const styles = StyleSheet.create({
 		borderColor: '#e2e8f0',
 	},
 	qtyText: {
-		marginHorizontal: 12,
+		marginHorizontal: 10,
 		fontSize: 14,
 		fontWeight: '600',
 		color: '#1e293b',
 	},
+
+	// Footer
 	footer: { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 20 },
 	row: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		marginBottom: 10,
+		marginBottom: 8,
 	},
 	label: { color: '#64748b', fontSize: 14 },
 	value: { color: '#1e293b', fontSize: 14, fontWeight: '600' },
+	divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 12 },
 	totalRow: {
-		marginTop: 8,
-		paddingTop: 12,
-		borderTopWidth: 1,
-		borderTopColor: '#e2e8f0',
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 20,
 	},
-	totalLabel: { fontSize: 18, fontWeight: '700', color: '#3b82f6' },
+	totalLabel: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+	totalValue: { fontSize: 24, fontWeight: '800', color: '#3b82f6' },
 	payBtn: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		gap: 8,
 		backgroundColor: '#3b82f6',
 		paddingVertical: 16,
 		borderRadius: 14,
 		alignItems: 'center',
-		marginTop: 20,
+		shadowColor: '#3b82f6',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.2,
+		shadowRadius: 8,
 	},
 	payText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

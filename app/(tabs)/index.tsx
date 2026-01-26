@@ -3,7 +3,7 @@ import { ProductCard } from '@/components/pos/product-card';
 import { SessionModal } from '@/components/pos/session-modal';
 import { ThemedText } from '@/components/themed-text';
 import { CATEGORIES } from '@/constants/menuData';
-import { usePOS } from '@/context/POSContext'; // <-- Import dari Context
+import { usePOS } from '@/context/POSContext';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {

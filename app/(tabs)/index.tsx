@@ -119,8 +119,6 @@ export default function POSScreen() {
 					}}
 				/>
 			</View>
-
-			{/* Sidebar sekarang mengambil data sendiri dari Context */}
 			<CartSidebar />
 		</View>
 	);

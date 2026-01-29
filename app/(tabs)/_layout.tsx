@@ -8,12 +8,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function CustomDrawerContent(props: any) {
 	const pathname = usePathname();
+
 	return (
 		<View style={{ flex: 1 }}>
 			<DrawerContentScrollView
 				{...props}
 				contentContainerStyle={{ paddingTop: 0 }}>
-				{/* Logo Area */}
 				<View
 					style={{
 						padding: 24,
@@ -41,6 +41,7 @@ function CustomDrawerContent(props: any) {
 						Chill Pil POS
 					</Text>
 				</View>
+
 				<View
 					style={{
 						height: 1,
@@ -50,7 +51,6 @@ function CustomDrawerContent(props: any) {
 					}}
 				/>
 
-				{/* Menu Items */}
 				<View style={{ paddingHorizontal: 12 }}>
 					<DrawerItem
 						label='Point of Sale'
@@ -104,7 +104,27 @@ function CustomDrawerContent(props: any) {
 							/>
 						)}
 						onPress={() => router.push('/report')}
-						focused={pathname === '/reports'}
+						focused={pathname === '/report'}
+						activeTintColor='#fff'
+						activeBackgroundColor='#3b82f6'
+						inactiveTintColor='#64748b'
+						style={{ borderRadius: 12 }}
+					/>
+					<DrawerItem
+						label='Settings'
+						icon={({ color, size }) => (
+							<Ionicons
+								name={
+									pathname === '/orders'
+										? 'settings'
+										: 'settings-outline'
+								}
+								size={size}
+								color={color}
+							/>
+						)}
+						onPress={() => router.push('/settings')}
+						focused={pathname === '/settings'}
 						activeTintColor='#fff'
 						activeBackgroundColor='#3b82f6'
 						inactiveTintColor='#64748b'
@@ -112,6 +132,28 @@ function CustomDrawerContent(props: any) {
 					/>
 				</View>
 			</DrawerContentScrollView>
+
+			<View
+				style={{
+					paddingHorizontal: 12,
+					paddingBottom: 20,
+					borderTopWidth: 1,
+					borderTopColor: '#f1f5f9',
+				}}>
+				<DrawerItem
+					label='Close Shift'
+					icon={({ size }) => (
+						<Ionicons
+							name='log-out-outline'
+							size={size}
+							color='#ef4444'
+						/>
+					)}
+					labelStyle={{ color: '#ef4444', fontWeight: '600' }}
+					onPress={() => {}}
+					style={{ borderRadius: 12, marginTop: 12 }}
+				/>
+			</View>
 		</View>
 	);
 }
@@ -135,6 +177,7 @@ export default function RootLayout() {
 					<Drawer.Screen name='index' />
 					<Drawer.Screen name='orders' />
 					<Drawer.Screen name='report' />
+					<Drawer.Screen name='settings' />
 				</Drawer>
 			</GestureHandlerRootView>
 		</POSProvider>

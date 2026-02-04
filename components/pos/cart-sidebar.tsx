@@ -4,40 +4,61 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View,
+	Platform,
+	ScrollView,
+	StyleSheet,
+	Switch,
+	TextInput,
+	TouchableOpacity,
+	useWindowDimensions,
+	View,
 } from 'react-native';
 
-export const CartSidebar = () => {
+interface CartSidebarProps {
+	onClose?: () => void;
+}
+
+export const CartSidebar = ({ onClose }: CartSidebarProps) => {
+	const { width } = useWindowDimensions();
+	const isMobile = width < 768;
 	const { state, actions } = usePOS();
 	const { orderId, cart, orderType, customerName, tableNo, useBag, summary } =
 		state;
 
 	return (
-		<View style={styles.container}>
-			{/* Header: Order ID & Type */}
-			<View>
-				<View style={styles.header}>
-					<ThemedText style={styles.title}>
-						Order #{orderId}
-					</ThemedText>
-					<View style={styles.editIcon}>
-						<Ionicons
-							name='create-outline'
-							size={16}
-							color='#3b82f6'
-						/>
+		<View style={[styles.container, isMobile && styles.containerMobile]}>
+			<View style={styles.headerSection}>
+				<View style={styles.headerRow}>
+					<View>
+						<ThemedText style={styles.title}>
+							Order #{orderId}
+						</ThemedText>
+						<ThemedText style={styles.subtitle}>
+							{cart.length} items selected
+						</ThemedText>
 					</View>
+					{isMobile ? (
+						<TouchableOpacity
+							onPress={onClose}
+							style={styles.closeBtn}>
+							<Ionicons name='close' size={24} color='#1e293b' />
+						</TouchableOpacity>
+					) : (
+						<TouchableOpacity style={styles.moreBtn}>
+							<Ionicons
+								name='ellipsis-horizontal'
+								size={20}
+								color='#64748b'
+							/>
+						</TouchableOpacity>
+					)}
 				</View>
 
 				<View style={styles.typeContainer}>
 					{['Dine In', 'To Go', 'Delivery'].map((type) => (
 						<TouchableOpacity
 							key={type}
+							activeOpacity={0.8}
 							style={[
 								styles.typeBtn,
 								orderType === type && styles.typeBtnActive,
@@ -54,13 +75,11 @@ export const CartSidebar = () => {
 					))}
 				</View>
 
-				{/* --- INPUT FORM SECTION --- */}
 				<View style={styles.formContainer}>
-					{/* Customer Name (Always Visible) */}
-					<View style={styles.inputGroup}>
+					<View style={styles.inputWrapper}>
 						<Ionicons
 							name='person-outline'
-							size={20}
+							size={18}
 							color='#94a3b8'
 							style={styles.inputIcon}
 						/>
@@ -69,41 +88,36 @@ export const CartSidebar = () => {
 							placeholder='Customer Name'
 							value={customerName}
 							onChangeText={actions.setCustomerName}
+							placeholderTextColor='#94a3b8'
 						/>
 					</View>
 
-					{/* Table Number (Only for Dine In) */}
 					{orderType === 'Dine In' && (
-						<View style={[styles.inputGroup, { marginTop: 10 }]}>
+						<View style={[styles.inputWrapper, { marginTop: 12 }]}>
 							<Ionicons
 								name='grid-outline'
-								size={20}
+								size={18}
 								color='#94a3b8'
 								style={styles.inputIcon}
 							/>
 							<TextInput
 								style={styles.textInput}
-								placeholder='Table Number'
+								placeholder='Table No.'
 								keyboardType='numeric'
 								value={tableNo}
 								onChangeText={actions.setTableNo}
+								placeholderTextColor='#94a3b8'
 							/>
 						</View>
 					)}
 
-					{/* Shopping Bag (Only for To Go / Delivery) */}
 					{orderType !== 'Dine In' && (
 						<View style={styles.bagRow}>
-							<View
-								style={{
-									flexDirection: 'row',
-									alignItems: 'center',
-									gap: 8,
-								}}>
+							<View style={styles.bagInfo}>
 								<View style={styles.bagIconBox}>
 									<Ionicons
-										name='bag-handle-outline'
-										size={18}
+										name='bag-handle'
+										size={16}
 										color='#F97316'
 									/>
 								</View>
@@ -130,17 +144,25 @@ export const CartSidebar = () => {
 				</View>
 			</View>
 
-			{/* Cart List */}
-			<ScrollView style={{ flex: 1 }}>
+			<ScrollView
+				style={styles.listContainer}
+				showsVerticalScrollIndicator={false}>
 				{cart.length === 0 ? (
 					<View style={styles.empty}>
-						<Ionicons
-							name='cart-outline'
-							size={48}
-							color='#e2e8f0'
+						<Image
+							source={require('@/assets/images/icon.png')}
+							style={{
+								width: 60,
+								height: 60,
+								opacity: 0.2,
+								marginBottom: 16,
+							}}
 						/>
+						<ThemedText style={styles.emptyTitle}>
+							Cart is Empty
+						</ThemedText>
 						<ThemedText style={styles.emptyText}>
-							No items selected
+							Select products to start order
 						</ThemedText>
 					</View>
 				) : (
@@ -149,9 +171,12 @@ export const CartSidebar = () => {
 							<Image
 								source={{ uri: item.img }}
 								style={styles.itemImg}
+								contentFit='cover'
 							/>
-							<View style={{ flex: 1 }}>
-								<ThemedText style={styles.itemName}>
+							<View style={styles.itemInfo}>
+								<ThemedText
+									style={styles.itemName}
+									numberOfLines={1}>
 									{item.name}
 								</ThemedText>
 								<ThemedText style={styles.itemPrice}>
@@ -166,8 +191,8 @@ export const CartSidebar = () => {
 									style={styles.qtyBtn}>
 									<Ionicons
 										name='remove'
-										size={16}
-										color='#64748b'
+										size={14}
+										color='#1e293b'
 									/>
 								</TouchableOpacity>
 								<ThemedText style={styles.qtyText}>
@@ -180,8 +205,8 @@ export const CartSidebar = () => {
 									style={styles.qtyBtn}>
 									<Ionicons
 										name='add'
-										size={16}
-										color='#64748b'
+										size={14}
+										color='#1e293b'
 									/>
 								</TouchableOpacity>
 							</View>
@@ -190,22 +215,28 @@ export const CartSidebar = () => {
 				)}
 			</ScrollView>
 
-			{/* Footer */}
 			<View style={styles.footer}>
-				<Row
-					label='Subtotal'
-					value={`$${summary.subTotal.toFixed(2)}`}
-				/>
-				<Row label='Tax (10%)' value={`$${summary.tax.toFixed(2)}`} />
-				{summary.bag > 0 && (
+				<View style={styles.summaryContainer}>
 					<Row
-						label='Packaging'
-						value={`$${summary.bag.toFixed(2)}`}
+						label='Subtotal'
+						value={`$${summary.subTotal.toFixed(2)}`}
 					/>
-				)}
+					<Row
+						label='Tax (10%)'
+						value={`$${summary.tax.toFixed(2)}`}
+					/>
+					{summary.bag > 0 && (
+						<Row
+							label='Packaging'
+							value={`$${summary.bag.toFixed(2)}`}
+						/>
+					)}
+				</View>
 				<View style={styles.divider} />
 				<View style={styles.totalRow}>
-					<ThemedText style={styles.totalLabel}>Total</ThemedText>
+					<ThemedText style={styles.totalLabel}>
+						Total Amount
+					</ThemedText>
 					<ThemedText style={styles.totalValue}>
 						${summary.total.toFixed(2)}
 					</ThemedText>
@@ -213,9 +244,18 @@ export const CartSidebar = () => {
 
 				<TouchableOpacity
 					style={styles.payBtn}
+					activeOpacity={0.9}
 					onPress={actions.placeOrder}>
-					<ThemedText style={styles.payText}>Place Order</ThemedText>
-					<Ionicons name='arrow-forward' size={20} color='#fff' />
+					<ThemedText style={styles.payText}>
+						Proceed to Payment
+					</ThemedText>
+					<View style={styles.payIcon}>
+						<Ionicons
+							name='arrow-forward'
+							size={18}
+							color='#3b82f6'
+						/>
+					</View>
 				</TouchableOpacity>
 			</View>
 		</View>
@@ -231,138 +271,179 @@ const Row = ({ label, value }: { label: string; value: string }) => (
 
 const styles = StyleSheet.create({
 	container: {
-		width: 380,
+		width: 400,
 		backgroundColor: '#fff',
 		borderLeftWidth: 1,
 		borderLeftColor: '#f1f5f9',
-		padding: 24,
-		justifyContent: 'space-between',
+		height: '100%',
+		display: 'flex',
 	},
-
-	header: {
+	containerMobile: {
+		width: '100%',
+		borderLeftWidth: 0,
+	},
+	headerSection: {
+		padding: 24,
+		paddingBottom: 16,
+		backgroundColor: '#fff',
+		zIndex: 10,
+	},
+	headerRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		alignItems: 'center',
+		alignItems: 'flex-start',
 		marginBottom: 20,
 	},
-	title: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
-	editIcon: { padding: 4, backgroundColor: '#eff6ff', borderRadius: 8 },
+	title: {
+		fontSize: 24,
+		fontWeight: '800',
+		color: '#1e293b',
+		letterSpacing: -0.5,
+	},
+	subtitle: {
+		fontSize: 14,
+		color: '#64748b',
+		fontWeight: '500',
+		marginTop: 2,
+	},
+	closeBtn: { padding: 8, backgroundColor: '#f8fafc', borderRadius: 12 },
+	moreBtn: { padding: 8 },
 
 	typeContainer: {
 		flexDirection: 'row',
-		backgroundColor: '#f1f5f9',
+		backgroundColor: '#f8fafc',
 		padding: 4,
-		borderRadius: 12,
-		marginBottom: 16,
+		borderRadius: 14,
+		marginBottom: 20,
 	},
 	typeBtn: {
 		flex: 1,
-		paddingVertical: 8,
+		paddingVertical: 10,
 		alignItems: 'center',
 		borderRadius: 10,
 	},
 	typeBtnActive: {
 		backgroundColor: '#fff',
-		elevation: 1,
 		shadowColor: '#000',
 		shadowOpacity: 0.05,
-		shadowRadius: 2,
+		shadowRadius: 4,
+		elevation: 2,
 	},
-	typeText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+	typeText: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
 	typeTextActive: { color: '#1e293b' },
 
-	// Form Styles
-	formContainer: {
-		marginBottom: 20,
-		padding: 16,
-		backgroundColor: '#F8FAFC',
-		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: '#F1F5F9',
-	},
-	inputGroup: {
+	formContainer: {},
+	inputWrapper: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: '#fff',
-		borderRadius: 10,
+		backgroundColor: '#f8fafc',
+		borderRadius: 12,
 		borderWidth: 1,
 		borderColor: '#e2e8f0',
-		paddingHorizontal: 12,
+		paddingHorizontal: 14,
+		height: 48,
 	},
-	inputIcon: { marginRight: 8 },
-	textInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: '#1e293b' },
+	inputIcon: { marginRight: 10 },
+	textInput: {
+		flex: 1,
+		height: '100%',
+		fontSize: 14,
+		fontWeight: '500',
+		color: '#1e293b',
+	},
 
 	bagRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		marginTop: 10,
-		paddingVertical: 4,
+		marginTop: 16,
+		padding: 12,
+		backgroundColor: '#fff7ed',
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: '#ffedd5',
 	},
+	bagInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 	bagIconBox: {
-		width: 32,
-		height: 32,
-		backgroundColor: '#FFF7ED',
-		borderRadius: 8,
+		width: 36,
+		height: 36,
+		backgroundColor: '#fff',
+		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
-	bagLabel: { fontSize: 14, fontWeight: '600', color: '#334155' },
-	bagPrice: { fontSize: 12, color: '#F97316', fontWeight: '600' },
+	bagLabel: { fontSize: 14, fontWeight: '700', color: '#7c2d12' },
+	bagPrice: { fontSize: 12, color: '#ea580c', fontWeight: '600' },
 
-	// List Styles
+	listContainer: { flex: 1, paddingHorizontal: 24 },
 	empty: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		opacity: 0.5,
+		minHeight: 300,
 	},
-	emptyText: { marginTop: 12, color: '#94a3b8' },
-	itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+	emptyTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		color: '#1e293b',
+		marginBottom: 4,
+	},
+	emptyText: { color: '#94a3b8', fontSize: 14 },
+
+	itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
 	itemImg: {
-		width: 48,
-		height: 48,
-		borderRadius: 10,
-		marginRight: 12,
+		width: 56,
+		height: 56,
+		borderRadius: 12,
+		marginRight: 14,
 		backgroundColor: '#f1f5f9',
 	},
-	itemName: { fontSize: 14, fontWeight: '600', color: '#1e293b', width: 120 },
-	itemPrice: { fontSize: 13, color: '#64748b', marginTop: 2 },
+	itemInfo: { flex: 1, marginRight: 8 },
+	itemName: {
+		fontSize: 15,
+		fontWeight: '600',
+		color: '#1e293b',
+		marginBottom: 4,
+	},
+	itemPrice: { fontSize: 14, color: '#64748b', fontWeight: '500' },
+
 	qtyContainer: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: '#f8fafc',
+		backgroundColor: '#fff',
 		borderRadius: 8,
-		padding: 4,
-		marginLeft: 'auto',
+		borderWidth: 1,
+		borderColor: '#e2e8f0',
+		padding: 3,
 	},
 	qtyBtn: {
 		width: 28,
 		height: 28,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#fff',
+		backgroundColor: '#f8fafc',
 		borderRadius: 6,
-		borderWidth: 1,
-		borderColor: '#e2e8f0',
 	},
 	qtyText: {
 		marginHorizontal: 10,
 		fontSize: 14,
-		fontWeight: '600',
+		fontWeight: '700',
 		color: '#1e293b',
 	},
 
-	// Footer
-	footer: { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 20 },
-	row: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginBottom: 8,
+	footer: {
+		padding: 24,
+		paddingTop: 20,
+		backgroundColor: '#fff',
+		borderTopWidth: 1,
+		borderTopColor: '#f1f5f9',
+		paddingBottom: Platform.OS === 'ios' ? 34 : 24,
 	},
-	label: { color: '#64748b', fontSize: 14 },
+	summaryContainer: { gap: 10, marginBottom: 16 },
+	row: { flexDirection: 'row', justifyContent: 'space-between' },
+	label: { color: '#64748b', fontSize: 14, fontWeight: '500' },
 	value: { color: '#1e293b', fontSize: 14, fontWeight: '600' },
-	divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 12 },
+	divider: { height: 1, backgroundColor: '#f1f5f9', marginBottom: 16 },
 	totalRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -370,19 +451,29 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 	},
 	totalLabel: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
-	totalValue: { fontSize: 24, fontWeight: '800', color: '#3b82f6' },
+	totalValue: { fontSize: 28, fontWeight: '800', color: '#1e293b' },
 	payBtn: {
 		flexDirection: 'row',
-		justifyContent: 'center',
-		gap: 8,
-		backgroundColor: '#3b82f6',
-		paddingVertical: 16,
-		borderRadius: 14,
+		justifyContent: 'space-between',
+		backgroundColor: '#1e293b',
+		padding: 4,
+		paddingLeft: 20,
+		borderRadius: 16,
 		alignItems: 'center',
-		shadowColor: '#3b82f6',
-		shadowOffset: { width: 0, height: 4 },
+		height: 56,
+		shadowColor: '#1e293b',
+		shadowOffset: { width: 0, height: 8 },
 		shadowOpacity: 0.2,
-		shadowRadius: 8,
+		shadowRadius: 12,
+		elevation: 8,
 	},
 	payText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+	payIcon: {
+		backgroundColor: '#fff',
+		width: 48,
+		height: 48,
+		borderRadius: 12,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
 });
